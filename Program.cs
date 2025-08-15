@@ -11,7 +11,7 @@ builder.Services.AddAutoMapper(typeof(NotificationApi.Mappers.ContractMapping));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddTransient<IItemService, ItemService>();
+builder.Services.AddTransient<INotificationService, NotificationService>();
 
 builder.Services.AddAuthentication(options =>
 {

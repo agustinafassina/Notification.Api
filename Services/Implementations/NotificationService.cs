@@ -4,11 +4,11 @@ using NotificationApi.Services.Interfaces;
 
 namespace NotificationApi.Services.Implementations
 {
-    public class ItemService : IItemService
+    public class NotificationService : INotificationService
     {
         private readonly List<ItemDto> _items = new();
 
-        public ItemService()
+        public NotificationService()
         {
             _items.Add(new ItemDto { Id = 1, Name = "Item 1" });
             _items.Add(new ItemDto { Id = 2, Name = "Item 2" });

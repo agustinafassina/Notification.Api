@@ -8,10 +8,10 @@ namespace NotificationApi.Controllers
     [Route("api/v1/[controller]")]
     public class NotificationController : ControllerBase
     {
-        private readonly IItemService _itemService;
+        private readonly INotificationService _itemService;
         private readonly IMapper _mapper;
 
-        public NotificationController(IItemService itemService, IMapper mapper)
+        public NotificationController(INotificationService itemService, IMapper mapper)
         {
             _itemService = itemService;
             _mapper = mapper;

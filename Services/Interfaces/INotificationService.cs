@@ -2,7 +2,7 @@ using NotificationApi.Services.Dto;
 
 namespace NotificationApi.Services.Interfaces
 {
-    public interface IItemService
+    public interface INotificationService
     {
         IEnumerable<ItemDto> GetAllItems();
         ItemDto GetItemById(int id);
