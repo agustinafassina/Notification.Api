@@ -1,6 +1,9 @@
 using AutoMapper;
 using NotificationApi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using NotificationApi.Contracts.Request;
+using NotificationApi.Services.Dto;
+using System.Threading.Tasks;
 
 namespace NotificationApi.Controllers
 {
@@ -17,17 +20,33 @@ namespace NotificationApi.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet("send-aws")]
-        public async Task<IActionResult> SendNotificationWithAWS()
+        [HttpPost("send-aws")]
+        public async Task<IActionResult> SendNotificationWithAWS([FromBody] EmailRequest request)
         {
-            return Ok("Cleooo :!");
+            EmailDto emailRequest = _mapper.Map<EmailDto>(request);
+            bool status = await _itemService.SendNotificationWithAWS(emailRequest);
+            return Ok(status);
         }
 
-        [HttpGet("send-gmail")]
-        public IActionResult SendNotificaionWithPersonalUser()
+        [HttpPost("send-gmail")]
+        public async Task<IActionResult> SendNotificaionWithPersonalUser([FromBody] EmailRequest request)
         {
-            IEnumerable<Services.Dto.ItemDto>? items = _itemService.GetAllItems();
-            return Ok(items);
+            try
+            {
+                EmailDto emailRequest = _mapper.Map<EmailDto>(request);
+                bool status = await _itemService.SendNotificationWithGmail(emailRequest);
+                return Ok(status);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("version")]
+        public IActionResult GetVersion()
+        {
+            return Ok("v1.0.0");
         }
     }
 }
