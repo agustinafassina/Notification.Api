@@ -4,8 +4,7 @@ namespace NotificationApi.Services.Interfaces
 {
     public interface INotificationService
     {
-        IEnumerable<ItemDto> GetAllItems();
-        ItemDto GetItemById(int id);
-        ItemDto CreateItem(ItemCreateDto newItem);
+        Task<bool> SendNotificationWithAWS(EmailDto emailRequest);
+        Task<bool> SendNotificationWithGmail(EmailDto emailRequest);
     }
 }
