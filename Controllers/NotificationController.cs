@@ -24,7 +24,7 @@ namespace NotificationApi.Controllers
         public async Task<IActionResult> SendNotificationWithAWS([FromBody] EmailRequest request)
         {
             EmailDto emailRequest = _mapper.Map<EmailDto>(request);
-            bool status = await _itemService.SendNotificationWithAWS(emailRequest);
+            bool status = await _itemService.SendNotificationWithSeSAws(emailRequest);
             return Ok(status);
         }
 
@@ -34,7 +34,7 @@ namespace NotificationApi.Controllers
             try
             {
                 EmailDto emailRequest = _mapper.Map<EmailDto>(request);
-                bool status = await _itemService.SendNotificationWithGmail(emailRequest);
+                bool status = await _itemService.SendNotificationWithSMTP(emailRequest);
                 return Ok(status);
             }
             catch (Exception ex)

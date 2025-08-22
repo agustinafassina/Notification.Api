@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using NotificationApi.Services;
+using NotificationApi.Services.Dto;
 using NotificationApi.Services.Implementations;
 using NotificationApi.Services.Interfaces;
 
@@ -38,6 +39,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.Configure<SMTPSetting>(configuration.GetSection(nameof(SMTPSetting)));
 
 builder.Services.AddControllers();
 

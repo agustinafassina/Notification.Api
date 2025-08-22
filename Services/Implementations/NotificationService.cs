@@ -1,4 +1,8 @@
 
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using Microsoft.Extensions.Options;
+using MimeKit;
 using NotificationApi.Services.Dto;
 using NotificationApi.Services.Interfaces;
 
@@ -6,30 +10,42 @@ namespace NotificationApi.Services.Implementations
 {
     public class NotificationService : INotificationService
     {
-        private readonly List<ItemDto> _items = new();
-
-        public NotificationService()
+        private readonly SMTPSetting _smtpSetting;
+        public NotificationService(IOptions<SMTPSetting> smtpSetting)
         {
-            _items.Add(new ItemDto { Id = 1, Name = "Item 1" });
-            _items.Add(new ItemDto { Id = 2, Name = "Item 2" });
+            _smtpSetting = smtpSetting.Value ?? throw new ArgumentNullException(nameof(smtpSetting), "SMPT settings cannot be null.");
         }
 
-        public IEnumerable<ItemDto> GetAllItems()
+        public async Task<bool> SendNotificationWithSeSAws(EmailDto request)
         {
-            return _items;
+            return true;
         }
 
-        public ItemDto GetItemById(int id)
+        public async Task<bool> SendNotificationWithSMTP(EmailDto request)
         {
-            return _items.FirstOrDefault(i => i.Id == id);
-        }
+            try
+                {
+                    var emailMessage = new MimeMessage();
+                    emailMessage.From.Add(new MailboxAddress("Agushinaa", _smtpSetting.Email));
+                    emailMessage.To.Add(new MailboxAddress(request.RecipientName, request.RecipientEmail));
+                    emailMessage.Subject = "Welcome " + request.RecipientName;
 
-        public ItemDto CreateItem(ItemCreateDto newItem)
-        {
-            int newId = _items.Max(i => i.Id) + 1;
-            ItemDto item = new ItemDto { Id = newId, Name = newItem.Name };
-            _items.Add(item);
-            return item;
+                    emailMessage.Body = new TextPart("html")
+                    {
+                        Text = request.Body
+                    };
+
+                    using var client = new SmtpClient();
+                    await client.ConnectAsync(_smtpSetting.Host, _smtpSetting.Port, SecureSocketOptions.Auto);
+                    await client.AuthenticateAsync(_smtpSetting.Email, _smtpSetting.Password);
+                    await client.SendAsync(emailMessage);
+                    await client.DisconnectAsync(true);
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    return false;
+                }
         }
     }
 }
