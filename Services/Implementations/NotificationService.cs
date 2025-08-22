@@ -16,12 +16,12 @@ namespace NotificationApi.Services.Implementations
             _smtpSetting = smtpSetting.Value ?? throw new ArgumentNullException(nameof(smtpSetting), "SMPT settings cannot be null.");
         }
 
-        public async Task<bool> SendNotificationWithSeSAws(EmailDto request)
+        public async Task<string> SendNotificationWithSeSAws(EmailDto request)
         {
-            return true;
+            return "Not implemented";
         }
 
-        public async Task<bool> SendNotificationWithSMTP(EmailDto request)
+        public async Task<string> SendNotificationWithSMTP(EmailDto request)
         {
             try
                 {
@@ -40,11 +40,11 @@ namespace NotificationApi.Services.Implementations
                     await client.AuthenticateAsync(_smtpSetting.Email, _smtpSetting.Password);
                     await client.SendAsync(emailMessage);
                     await client.DisconnectAsync(true);
-                    return true;
+                    return "Email sent successfully";
                 }
                 catch (Exception ex)
                 {
-                    return false;
+                    return "Error sending email: " + ex.Message;
                 }
         }
     }
