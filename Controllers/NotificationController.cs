@@ -20,7 +20,7 @@ namespace NotificationApi.Controllers
             _mapper = mapper;
         }
 
-        [HttpPost("send-aws")]
+        [HttpPost("send-ses")]
         public async Task<IActionResult> SendNotificationWithAWS([FromBody] EmailRequest request)
         {
             EmailDto emailRequest = _mapper.Map<EmailDto>(request);
@@ -28,7 +28,7 @@ namespace NotificationApi.Controllers
             return Ok(status);
         }
 
-        [HttpPost("send-gmail")]
+        [HttpPost("send-smpt")]
         public async Task<IActionResult> SendNotificaionWithPersonalUser([FromBody] EmailRequest request)
         {
             try
