@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using NotificationApi.Services;
-using NotificationApi.Services.Dto;
 using NotificationApi.Services.Implementations;
 using NotificationApi.Services.Interfaces;
+using NotificationApi.Services.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -12,6 +11,7 @@ builder.Services.AddAutoMapper(typeof(NotificationApi.Mappers.ContractMapping));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddAWSService<Amazon.SimpleEmail.IAmazonSimpleEmailService>();
 builder.Services.AddTransient<INotificationService, NotificationService>();
 
 builder.Services.AddAuthentication(options =>
@@ -40,6 +40,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.Configure<SMTPSetting>(configuration.GetSection(nameof(SMTPSetting)));
+builder.Services.Configure<AWSSetting>(configuration.GetSection(nameof(AWSSetting)));
 
 builder.Services.AddControllers();
 

@@ -1,24 +1,56 @@
 
+using Amazon.SimpleEmail;
+using Amazon.SimpleEmail.Model;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using NotificationApi.Services.Dto;
 using NotificationApi.Services.Interfaces;
+using NotificationApi.Services.Settings;
 
 namespace NotificationApi.Services.Implementations
 {
     public class NotificationService : INotificationService
     {
         private readonly SMTPSetting _smtpSetting;
-        public NotificationService(IOptions<SMTPSetting> smtpSetting)
+        private readonly IAmazonSimpleEmailService _sesClient;
+        private readonly AWSSetting _awsSetting;
+        public NotificationService(IOptions<SMTPSetting> smtpSetting, IAmazonSimpleEmailService sesClient, IOptions<AWSSetting> awsSetting)
         {
             _smtpSetting = smtpSetting.Value ?? throw new ArgumentNullException(nameof(smtpSetting), "SMPT settings cannot be null.");
+            _sesClient = sesClient;
+            _awsSetting = awsSetting.Value ?? throw new ArgumentNullException(nameof(awsSetting), "AWS settings cannot be null.");
         }
 
         public async Task<string> SendNotificationWithSeSAws(EmailDto request)
         {
-            return "Not implemented";
+            try
+            {
+                var sendRequest = new SendEmailRequest
+                {
+                    Source = _awsSetting.EmailFrom,
+                    Destination = new Destination
+                    {
+                        ToAddresses = new List<string> { request.RecipientEmail }
+                    },
+                    Message = new Message
+                    {
+                        Subject = new Content(request.Subject),
+                        Body = new Body
+                        {
+                            Text = new Content(request.Body)
+                        }
+                    }
+                };
+
+                var response = await _sesClient.SendEmailAsync(sendRequest);
+                return response.HttpStatusCode.ToString();
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
         }
 
         public async Task<string> SendNotificationWithSMTP(EmailDto request)

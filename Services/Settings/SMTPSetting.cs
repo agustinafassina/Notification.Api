@@ -1,4 +1,4 @@
-namespace NotificationApi.Services.Dto
+namespace NotificationApi.Services.Settings
 {
     public class SMTPSetting
     {
