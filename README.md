@@ -6,7 +6,7 @@ This repository uses the AWS SDK, that is, it uses AWS credentials. If you have 
 ## API Reference
 
 ```http
-  POST /api/v1/Notification/send-ses
+POST /api/v1/Notification/send-ses
 ```
 
 Body
@@ -20,7 +20,7 @@ Body
 ```
 
 ```http
-  POST /api/v1/Notification/send-smpt
+POST /api/v1/Notification/send-smpt
 ```
 
 Body
