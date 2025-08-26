@@ -33,7 +33,7 @@ Body
 }
 ```
 
-### Api Diagram
+## Api Diagram
 <img src="api-diagram.png" alt="Logo del proyecto" width="400" height="450">
 
 ### Authorization in the Api
