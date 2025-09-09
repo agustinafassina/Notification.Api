@@ -3,7 +3,7 @@ This repository will contain an API with two endpoints for sending emails contai
 This is a copy of Template.Api.Net9.
 This repository uses the AWS SDK, that is, it uses AWS credentials. If you have the AWS CLI installed and already have the credentials, it will work fine.
 
-## API Reference
+## 📄API Reference
 
 ```http
 POST /api/v1/Notification/send-ses
@@ -33,7 +33,7 @@ Body
 }
 ```
 
-### Api Diagram
+### Diagram
 <img src="api-diagram.png" alt="Logo del proyecto" width="400" height="450">
 
 ### 🔐Authorization
@@ -54,13 +54,13 @@ Environment variables setting (auth0 in this case)
   }
 ```
 
-## Dotnet build and run
+### 🚀Dotnet build and run
 ```
 dotnet build
 dotnet run
 ```
 
-## Docker build and run
+### 🚀Docker build and run
 
 ```
 # Docker build
