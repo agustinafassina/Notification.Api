@@ -1,4 +1,4 @@
-## Template.Api.Net9
+## Template.Api.Net10
 This repository will contain an API with two endpoints for sending emails containing information. One endpoint uses Gmail or Outlook credentials to send emails, while the other utilizes the AWS SDK to send messages via Amazon SES (Simple Email Service). It provides flexible options for email notifications.<br>
 This is a copy of Template.Api.Net9.
 This repository uses the AWS SDK, that is, it uses AWS credentials. If you have the AWS CLI installed and already have the credentials, it will work fine.
