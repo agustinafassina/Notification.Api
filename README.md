@@ -1,15 +1,15 @@
-## Template.Api.Net10
+# Template Api with Net10
 This repository will contain an API with two endpoints for sending emails containing information. One endpoint uses Gmail or Outlook credentials to send emails, while the other utilizes the AWS SDK to send messages via Amazon SES (Simple Email Service). It provides flexible options for email notifications.<br>
 This is a copy of Template.Api.Net9.
 This repository uses the AWS SDK, that is, it uses AWS credentials. If you have the AWS CLI installed and already have the credentials, it will work fine.
 
-## 📄API Reference
-
+## API Reference 📄
+- Endpoint:
 ```http
 POST /api/v1/Notification/send-ses
 ```
 
-Body
+- Body:
 ```
 {
   "recipientName": "string",
@@ -19,11 +19,12 @@ Body
 }
 ```
 
+- Endpoint:
 ```http
 POST /api/v1/Notification/send-smpt
 ```
 
-Body
+- Body:
 ```
 {
   "recipientName": "string",
@@ -36,7 +37,7 @@ Body
 ### Diagram
 <img src="api-diagram.png" alt="Logo del proyecto" width="400" height="450">
 
-### 🔐Authorization
+### Authorization 🔐
 It implements JWT authentication to secure endpoints, validating issuer, audience, and signature, allowing access only to authorized users.
 ```
 [Authorize(AuthenticationSchemes = "Auth0App1")]
@@ -54,13 +55,13 @@ Environment variables setting (auth0 in this case)
   }
 ```
 
-### 🚀Dotnet build and run
+### Dotnet build and run 🚀
 ```
 dotnet build
 dotnet run
 ```
 
-### 🚀Docker build and run
+### Docker build and run 🚀
 
 ```
 # Docker build
