@@ -23,9 +23,20 @@ namespace NotificationApi.Controllers
         [HttpPost("send-ses")]
         public async Task<IActionResult> SendNotificationWithAWS([FromBody] EmailRequest request)
         {
-            EmailDto emailRequest = _mapper.Map<EmailDto>(request);
-            string status = await _itemService.SendNotificationWithSeSAws(emailRequest);
-            return Ok(status);
+            try
+            {
+                EmailDto emailRequest = _mapper.Map<EmailDto>(request);
+                string status = await _itemService.SendNotificationWithSeSAws(emailRequest);
+                return Ok(new { message = status });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "An error occurred while sending the email", details = ex.Message });
+            }
         }
 
         [HttpPost("send-smpt")]
