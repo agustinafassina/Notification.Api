@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="NotificationApi.Tests/**" />
+    <Content Remove="NotificationApi.Tests/**" />
+    <EmbeddedResource Remove="NotificationApi.Tests/**" />
+    <None Remove="NotificationApi.Tests/**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="14.0.0" />
     <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.2.2" />
     <PackageReference Include="AWSSDK.SimpleEmail" Version="4.0.0.20" />
