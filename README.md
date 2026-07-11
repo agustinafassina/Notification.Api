@@ -101,6 +101,40 @@ dotnet run
 
 Swagger (Development): `https://localhost:<port>/swagger`
 
+## 🧪 Unit tests
+The solution includes a test project at `NotificationApi.Tests` using **xUnit** and **Moq**. Tests do not require external services (AWS or SMTP); dependencies are mocked.
+
+| Test class | What it covers |
+| --- | --- |
+| `Controllers/NotificationControllerTests` | Version endpoint, SES and SMTP actions, HTTP status codes and error handling |
+| `Services/NotificationServiceTests` | Constructor validation, SES send success/failure, SMTP connection errors |
+| `Mappers/ContractMappingTests` | `EmailRequest` → `EmailDto` AutoMapper profile |
+
+### Run all tests
+From the repository root:
+
+```bash
+dotnet test
+```
+
+Or run only the test project:
+
+```bash
+dotnet test NotificationApi.Tests/NotificationApi.Tests.csproj
+```
+
+### Run a specific test class
+```bash
+dotnet test --filter "FullyQualifiedName~NotificationControllerTests"
+```
+
+### Run with code coverage
+The test project includes `coverlet.collector`. To generate a coverage report:
+
+```bash
+dotnet test --collect:"XPlat Code Coverage"
+```
+
 ## 🐳 Run with Docker
 ```bash
 # Build image
@@ -114,5 +148,3 @@ Swagger in Docker: `http://localhost:8787/swagger/index.html`
 
 ## 🗺️ Diagram
 <img src="api-diagram.png" alt="Notification API diagram" width="1000" height="450">
-
-
