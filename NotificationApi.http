@@ -1,6 +1,27 @@
 @NotificationApi_HostAddress = http://localhost:5142
 
-GET {{NotificationApi_HostAddress}}/weatherforecast/
+### Version
+GET {{NotificationApi_HostAddress}}/api/v1/Notification/version
 Accept: application/json
 
-###
+### Send email via AWS SES
+POST {{NotificationApi_HostAddress}}/api/v1/Notification/send-ses
+Content-Type: application/json
+
+{
+  "recipientName": "John Doe",
+  "recipientEmail": "john@example.com",
+  "subject": "Welcome!",
+  "body": "<h1>Hello John</h1><p>Thanks for signing up.</p>"
+}
+
+### Send email via SMTP
+POST {{NotificationApi_HostAddress}}/api/v1/Notification/send-smpt
+Content-Type: application/json
+
+{
+  "recipientName": "John Doe",
+  "recipientEmail": "john@example.com",
+  "subject": "Welcome!",
+  "body": "<h1>Hello John</h1><p>Thanks for signing up.</p>"
+}

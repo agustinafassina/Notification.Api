@@ -39,7 +39,7 @@ namespace NotificationApi.Services.Implementations
                         Subject = new Content(request.Subject),
                         Body = new Body
                         {
-                            Text = new Content(request.Body)
+                            Html = new Content(request.Body)
                         }
                     }
                 };
@@ -58,9 +58,9 @@ namespace NotificationApi.Services.Implementations
             try
                 {
                     var emailMessage = new MimeMessage();
-                    emailMessage.From.Add(new MailboxAddress("Agushinaa", _smtpSetting.Email));
+                    emailMessage.From.Add(new MailboxAddress(_smtpSetting.Name, _smtpSetting.Email));
                     emailMessage.To.Add(new MailboxAddress(request.RecipientName, request.RecipientEmail));
-                    emailMessage.Subject = "Welcome " + request.RecipientName;
+                    emailMessage.Subject = request.Subject;
 
                     emailMessage.Body = new TextPart("html")
                     {
