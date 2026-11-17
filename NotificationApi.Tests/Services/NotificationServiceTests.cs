@@ -57,7 +57,7 @@ public class NotificationServiceTests
         Assert.Equal("from@test.com", capturedRequest!.Source);
         Assert.Equal(email.RecipientEmail, capturedRequest.Destination.ToAddresses.Single());
         Assert.Equal(email.Subject, capturedRequest.Message.Subject.Data);
-        Assert.Equal(email.Body, capturedRequest.Message.Body.Text.Data);
+        Assert.Equal(email.Body, capturedRequest.Message.Body.Html.Data);
     }
 
     [Fact]
