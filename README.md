@@ -1,22 +1,18 @@
 # 📬 Notification API
-
 .NET 10 REST API that sends email notifications through **AWS SES** or **SMTP** (MailKit).
 
 ## 🗺️ Architecture
-
 <img src="api-diagram.png" alt="Notification API diagram" width="1000">
 
 A request flows through `NotificationController` → AutoMapper (`EmailRequest` → `EmailDto`) → `NotificationService`, which sends the email through either the AWS SES client or an SMTP connection.
 
 ## 📋 Requirements
-
 - ✅ .NET SDK 10
 - ✅ For the SES endpoint: AWS credentials (AWS CLI profile or environment variables) and a sender address verified in SES
 - ✅ For the SMTP endpoint: an SMTP account (host, port, user, password)
 - 🐳 Docker (optional)
 
 ## 📁 Solution structure
-
 ```text
 NotificationApi.sln
 ├── NotificationApi.csproj          # API host
@@ -34,7 +30,6 @@ NotificationApi.sln
 ```
 
 ## 🚀 Run locally
-
 ```bash
 dotnet restore
 dotnet run --project NotificationApi.csproj
@@ -48,7 +43,6 @@ dotnet run --project NotificationApi.csproj
 Sample requests are in [`NotificationApi.http`](NotificationApi.http), which you can run from VS Code (REST Client) or Visual Studio.
 
 ### 🧪 Tests
-
 ```bash
 dotnet test
 ```
@@ -56,7 +50,6 @@ dotnet test
 The tests cover the controller (status codes and response bodies), the AutoMapper profile, and `NotificationService`. The SES client is mocked. The SMTP tests only cover the connection-failure case, so no real email is sent.
 
 ## ⚙️ Configuration
-
 The app reads these sections from `appsettings.json`, `appsettings.{Environment}.json`, user secrets, or environment variables. It binds `SMTPSetting` and `AWSSetting` by those exact names:
 
 ```json
@@ -90,10 +83,9 @@ The app reads these sections from `appsettings.json`, `appsettings.{Environment}
 | `SMTPSetting:Name` | Sender display name for SMTP emails |
 | `AWSSetting:EmailFrom` | Sender address for SES. It must be verified in SES. |
 | `AWSSetting:Region` | Not used yet. See **AWS region and credentials**. |
-| `Auth0App1` / `Auth0App2` | JWT issuer and audience for two Auth0 applications. See **Known limitations**. |
+| `Auth0App1` / `Auth0App2` | JWT issuer (your Auth0 domain, e.g. `https://your-tenant.auth0.com/`) and audience (the Auth0 API identifier). See **Authentication**. |
 
 ### 🔐 Secrets
-
 Don't commit real passwords to `appsettings*.json`. For local development, use user secrets:
 
 ```bash
@@ -105,7 +97,6 @@ dotnet user-secrets set "SMTPSetting:Password" "your-password"
 As environment variables (Docker, CI, cloud), replace `:` with a double underscore: `SMTPSetting__Password`, `AWSSetting__EmailFrom`, `Auth0App1__Issuer`, and so on.
 
 ### ☁️ AWS region and credentials
-
 The SES client is created by the AWS SDK (`AddAWSService`). The SDK gets its credentials and region from the default AWS chain, **not** from `AWSSetting`:
 
 - Credentials: `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`, an AWS CLI profile (`AWS_PROFILE`), or an IAM role when running in AWS.
@@ -115,16 +106,27 @@ The IAM identity needs the `ses:SendEmail` permission.
 
 > **SES sandbox:** new SES accounts start in sandbox mode. In sandbox mode, **both the sender and the recipient** must be verified, and sending limits are low. To send to any address, request production access in the SES console.
 
-## 📚 Endpoints
+## 🔑 Authentication
+The send endpoints require a JWT access token issued by Auth0. The API accepts tokens from either of the two configured Auth0 applications (`Auth0App1` or `Auth0App2`). A token is valid when its issuer (`iss`) and audience (`aud`) match one of them. `GET /version` is public.
 
-| Method | Path | Description |
-| --- | --- | --- |
-| `POST` | `/api/v1/Notification/send-ses` | Send an email via AWS SES |
-| `POST` | `/api/v1/Notification/send-smpt` | Send an email via SMTP (the route is spelled `send-smpt`) |
-| `GET` | `/api/v1/Notification/version` | Returns `"v1.0.0"` |
+Send the token in the `Authorization` header:
+
+```http
+Authorization: Bearer <access-token>
+```
+
+In Swagger, click **Authorize** and paste the token (without the `Bearer` prefix).
+
+Without a valid token, the send endpoints return `401 Unauthorized`.
+
+## 📚 Endpoints
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| `POST` | `/api/v1/Notification/send-ses` | 🔒 Bearer | Send an email via AWS SES |
+| `POST` | `/api/v1/Notification/send-smpt` | 🔒 Bearer | Send an email via SMTP (the route is spelled `send-smpt`) |
+| `GET` | `/api/v1/Notification/version` | Public | Returns `"v1.0.0"` |
 
 ### Request body (both send endpoints)
-
 ```json
 {
   "recipientName": "John Doe",
@@ -136,28 +138,33 @@ The IAM identity needs the `ses:SendEmail` permission.
 
 Both endpoints send `subject` as the email subject and `body` as **HTML**. With SMTP, the sender is `SMTPSetting:Name <SMTPSetting:Email>`. With SES, the sender is `AWSSetting:EmailFrom`. `recipientName` is used only by SMTP, as the recipient display name.
 
-### Example
+| Field | Rules |
+| --- | --- |
+| `recipientEmail` | Required, valid email address, max 320 characters |
+| `subject` | Required, max 998 characters |
+| `body` | Required (HTML) |
+| `recipientName` | Optional, max 200 characters |
 
+### Example
 ```bash
 curl -X POST http://localhost:5142/api/v1/Notification/send-ses \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"recipientName":"John Doe","recipientEmail":"john@example.com","subject":"Hi","body":"<p>Hello</p>"}'
 ```
 
 ### Responses
+| Result | Status | Body |
+| --- | --- | --- |
+| Email sent | `200` | `{ "message": "Email sent successfully" }` |
+| Invalid body (missing fields, bad email) | `400` | Validation `ProblemDetails` listing the invalid fields |
+| Missing or invalid token | `401` | Empty |
+| The provider (SES or SMTP) failed to send | `502` | `ProblemDetails` with `title: "Email could not be sent"` |
+| Unexpected error | `500` | `ProblemDetails` with `title: "An unexpected error occurred"` |
 
-| Endpoint | Result | Status | Body |
-| --- | --- | --- | --- |
-| `send-ses` | Sent | `200` | `{ "message": "OK" }` |
-| `send-ses` | SES error | `200` ⚠️ | `{ "message": "<error message>" }` |
-| `send-smpt` | Sent | `200` | `"Email sent successfully"` |
-| `send-smpt` | SMTP error | `200` ⚠️ | `"Error sending email: <error message>"` |
-| any | Malformed JSON | `400` | ASP.NET validation `ProblemDetails` |
-
-⚠️ Send failures currently return `200`, so callers must check the response body. See **Known limitations**.
+Error responses don't include internal exception messages. The full error is written to the application log.
 
 ## 🐳 Docker
-
 ```bash
 docker build -f Dockerfile -t notification-api .
 
@@ -172,6 +179,10 @@ docker run -d -p 8787:80 \
   -e SMTPSetting__Email=your-email@domain.com \
   -e SMTPSetting__Password=your-password \
   -e SMTPSetting__Name="Notification API" \
+  -e Auth0App1__Issuer=https://your-tenant.auth0.com/ \
+  -e Auth0App1__Audience=your-api-identifier \
+  -e Auth0App2__Issuer=https://your-other-tenant.auth0.com/ \
+  -e Auth0App2__Audience=your-other-api-identifier \
   --name notification-api notification-api
 ```
 
@@ -179,7 +190,6 @@ docker run -d -p 8787:80 \
 - Swagger: `http://localhost:8787/swagger`. It's only available when `ASPNETCORE_ENVIRONMENT=Development`.
 
 ## 🔄 CI/CD (Azure Pipelines)
-
 Two pipelines build the Docker image and push it to a container registry. Both run on every push to `main` (PRs are not built), and the image is tagged with the commit SHA (`$(Build.SourceVersion)`).
 
 | File | Registry | Required pipeline variables |
@@ -190,9 +200,5 @@ Two pipelines build the Docker image and push it to a container registry. Both r
 Store credentials as **secret** pipeline variables. The pipelines don't run `dotnet test`, so run the tests before merging to `main`.
 
 ## ⚠️ Known limitations
-
-- **No authentication on the endpoints:** JWT bearer authentication is registered for `Auth0App1` and `Auth0App2`, but the controller has no `[Authorize]` attribute. Anyone who can reach the API can send emails. Don't expose it publicly as it is.
-- **Errors return `200`:** `NotificationService` catches send errors and returns them as text, so a failed send still responds with `200`.
-- **No input validation:** the request fields are not validated (required fields, email format).
 - **`AWSSetting:Region` is ignored:** set the region as described in **AWS region and credentials**.
 - **Route typo:** the SMTP route is `send-smpt`, not `send-smtp`.

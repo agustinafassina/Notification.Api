@@ -4,7 +4,7 @@ namespace NotificationApi.Services.Interfaces
 {
     public interface INotificationService
     {
-        Task<string> SendNotificationWithSeSAws(EmailDto emailRequest);
-        Task<string> SendNotificationWithSMTP(EmailDto emailRequest);
+        Task SendNotificationWithSeSAws(EmailDto emailRequest);
+        Task SendNotificationWithSMTP(EmailDto emailRequest);
     }
 }

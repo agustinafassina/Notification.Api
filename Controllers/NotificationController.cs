@@ -1,16 +1,19 @@
 using AutoMapper;
-using NotificationApi.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NotificationApi.Contracts.Request;
 using NotificationApi.Services.Dto;
-using System.Threading.Tasks;
+using NotificationApi.Services.Interfaces;
 
 namespace NotificationApi.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/v1/[controller]")]
     public class NotificationController : ControllerBase
     {
+        private const string SentMessage = "Email sent successfully";
+
         private readonly INotificationService _itemService;
         private readonly IMapper _mapper;
 
@@ -20,40 +23,24 @@ namespace NotificationApi.Controllers
             _mapper = mapper;
         }
 
+        // Failures surface as EmailDeliveryException and are turned into a 502 by GlobalExceptionHandler.
         [HttpPost("send-ses")]
         public async Task<IActionResult> SendNotificationWithAWS([FromBody] EmailRequest request)
         {
-            try
-            {
-                EmailDto emailRequest = _mapper.Map<EmailDto>(request);
-                string status = await _itemService.SendNotificationWithSeSAws(emailRequest);
-                return Ok(new { message = status });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "An error occurred while sending the email", details = ex.Message });
-            }
+            EmailDto emailRequest = _mapper.Map<EmailDto>(request);
+            await _itemService.SendNotificationWithSeSAws(emailRequest);
+            return Ok(new { message = SentMessage });
         }
 
         [HttpPost("send-smpt")]
         public async Task<IActionResult> SendNotificaionWithPersonalUser([FromBody] EmailRequest request)
         {
-            try
-            {
-                EmailDto emailRequest = _mapper.Map<EmailDto>(request);
-                string status = await _itemService.SendNotificationWithSMTP(emailRequest);
-                return Ok(status);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
+            EmailDto emailRequest = _mapper.Map<EmailDto>(request);
+            await _itemService.SendNotificationWithSMTP(emailRequest);
+            return Ok(new { message = SentMessage });
         }
 
+        [AllowAnonymous]
         [HttpGet("version")]
         public IActionResult GetVersion()
         {

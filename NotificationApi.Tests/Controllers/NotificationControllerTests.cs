@@ -1,9 +1,12 @@
+using System.Reflection;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NotificationApi.Contracts.Request;
 using NotificationApi.Controllers;
 using NotificationApi.Services.Dto;
+using NotificationApi.Services.Exceptions;
 using NotificationApi.Services.Interfaces;
 
 namespace NotificationApi.Tests.Controllers;
@@ -20,11 +23,25 @@ public class NotificationControllerTests
     }
 
     [Fact]
+    public void Controller_RequiresAuthorization()
+    {
+        Assert.NotNull(typeof(NotificationController).GetCustomAttribute<AuthorizeAttribute>());
+    }
+
+    [Fact]
+    public void GetVersion_AllowsAnonymous()
+    {
+        MethodInfo method = typeof(NotificationController).GetMethod(nameof(NotificationController.GetVersion))!;
+
+        Assert.NotNull(method.GetCustomAttribute<AllowAnonymousAttribute>());
+    }
+
+    [Fact]
     public void GetVersion_ReturnsOkWithVersion()
     {
-        IActionResult? result = _controller.GetVersion();
+        IActionResult result = _controller.GetVersion();
 
-        OkObjectResult? okResult = Assert.IsType<OkObjectResult>(result);
+        OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
         Assert.Equal("v1.0.0", okResult.Value);
     }
 
@@ -32,91 +49,58 @@ public class NotificationControllerTests
     public async Task SendNotificationWithAWS_ReturnsOk_WhenServiceSucceeds()
     {
         EmailRequest request = CreateEmailRequest();
-        EmailDto? emailDto = CreateEmailDto();
-
-        _mapperMock.Setup(m => m.Map<EmailDto>(request)).Returns(emailDto);
-        _notificationServiceMock
-            .Setup(s => s.SendNotificationWithSeSAws(emailDto))
-            .ReturnsAsync("OK");
-
-        IActionResult? result = await _controller.SendNotificationWithAWS(request);
-
-        OkObjectResult? okResult = Assert.IsType<OkObjectResult>(result);
-        object? message = okResult.Value!.GetType().GetProperty("message")!.GetValue(okResult.Value);
-        Assert.Equal("OK", message);
-    }
-
-    [Fact]
-    public async Task SendNotificationWithAWS_ReturnsBadRequest_WhenArgumentExceptionIsThrown()
-    {
-        EmailRequest? request = CreateEmailRequest();
         EmailDto emailDto = CreateEmailDto();
-
         _mapperMock.Setup(m => m.Map<EmailDto>(request)).Returns(emailDto);
-        _notificationServiceMock
-            .Setup(s => s.SendNotificationWithSeSAws(emailDto))
-            .ThrowsAsync(new ArgumentException("Invalid email"));
 
-        IActionResult? result = await _controller.SendNotificationWithAWS(request);
+        IActionResult result = await _controller.SendNotificationWithAWS(request);
 
-        BadRequestObjectResult? badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        object? error = badRequestResult.Value!.GetType().GetProperty("error")!.GetValue(badRequestResult.Value);
-        Assert.Equal("Invalid email", error);
+        OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal("Email sent successfully", GetMessage(okResult));
+        _notificationServiceMock.Verify(s => s.SendNotificationWithSeSAws(emailDto), Times.Once);
     }
 
     [Fact]
-    public async Task SendNotificationWithAWS_ReturnsInternalServerError_WhenUnexpectedExceptionIsThrown()
+    public async Task SendNotificationWithAWS_PropagatesDeliveryException()
     {
-        EmailRequest? request = CreateEmailRequest();
-        EmailDto? emailDto = CreateEmailDto();
-
+        EmailRequest request = CreateEmailRequest();
+        EmailDto emailDto = CreateEmailDto();
         _mapperMock.Setup(m => m.Map<EmailDto>(request)).Returns(emailDto);
         _notificationServiceMock
             .Setup(s => s.SendNotificationWithSeSAws(emailDto))
-            .ThrowsAsync(new InvalidOperationException("Unexpected failure"));
+            .ThrowsAsync(new EmailDeliveryException("SES", new Exception("SES unavailable")));
 
-        IActionResult? result = await _controller.SendNotificationWithAWS(request);
-
-        ObjectResult? objectResult = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(500, objectResult.StatusCode);
-        object? error = objectResult.Value!.GetType().GetProperty("error")!.GetValue(objectResult.Value);
-        Assert.Equal("An error occurred while sending the email", error);
+        await Assert.ThrowsAsync<EmailDeliveryException>(() => _controller.SendNotificationWithAWS(request));
     }
 
     [Fact]
     public async Task SendNotificaionWithPersonalUser_ReturnsOk_WhenServiceSucceeds()
     {
-        EmailRequest? request = CreateEmailRequest();
+        EmailRequest request = CreateEmailRequest();
         EmailDto emailDto = CreateEmailDto();
-
         _mapperMock.Setup(m => m.Map<EmailDto>(request)).Returns(emailDto);
-        _notificationServiceMock
-            .Setup(s => s.SendNotificationWithSMTP(emailDto))
-            .ReturnsAsync("Email sent successfully");
 
-        IActionResult? result = await _controller.SendNotificaionWithPersonalUser(request);
+        IActionResult result = await _controller.SendNotificaionWithPersonalUser(request);
 
-        OkObjectResult? okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal("Email sent successfully", okResult.Value);
+        OkObjectResult okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal("Email sent successfully", GetMessage(okResult));
+        _notificationServiceMock.Verify(s => s.SendNotificationWithSMTP(emailDto), Times.Once);
     }
 
     [Fact]
-    public async Task SendNotificaionWithPersonalUser_ReturnsBadRequest_WhenExceptionIsThrown()
+    public async Task SendNotificaionWithPersonalUser_PropagatesDeliveryException()
     {
         EmailRequest request = CreateEmailRequest();
         EmailDto emailDto = CreateEmailDto();
-
         _mapperMock.Setup(m => m.Map<EmailDto>(request)).Returns(emailDto);
         _notificationServiceMock
             .Setup(s => s.SendNotificationWithSMTP(emailDto))
-            .ThrowsAsync(new Exception("SMTP failure"));
+            .ThrowsAsync(new EmailDeliveryException("SMTP", new Exception("SMTP failure")));
 
-        IActionResult? result = await _controller.SendNotificaionWithPersonalUser(request);
-
-        BadRequestObjectResult? badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-        object? error = badRequestResult.Value!.GetType().GetProperty("error")!.GetValue(badRequestResult.Value);
-        Assert.Equal("SMTP failure", error);
+        await Assert.ThrowsAsync<EmailDeliveryException>(() => _controller.SendNotificaionWithPersonalUser(request));
     }
+
+    private static object? GetMessage(OkObjectResult result) =>
+        result.Value!.GetType().GetProperty("message")!.GetValue(result.Value);
 
     private static EmailRequest CreateEmailRequest() => new()
     {
